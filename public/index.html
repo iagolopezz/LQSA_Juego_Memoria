@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Junta de Vecinos - Juego de Parejas</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+  <!-- ============ PANTALLA INICIAL ============ -->
+  <section id="pantalla-inicio" class="pantalla activa">
+    <div class="ventana">
+      <h1>🏢 Junta de Vecinos</h1>
+      <p class="lema">El juego de parejas de la comunidad</p>
+      <h2>🏆 Top 5 vecinos del año</h2>
+      <ol id="ranking" class="ranking">
+        <li class="apagado">Cargando...</li>
+      </ol>
+      <button id="boton-jugar" class="boton principal">Jugar</button>
+      <p class="nota">Tienes 1 minuto para resolver el orden del dia. Los errores se pagan con derrama.</p>
+    </div>
+  </section>
+
+  <!-- ============ PANTALLA DE JUEGO ============ -->
+  <section id="pantalla-juego" class="pantalla">
+    <header class="marcador">
+      <div>👤 <span id="texto-jugador">-</span></div>
+      <div>⏱️ <span id="texto-tiempo">60</span>s</div>
+      <div>⭐ <span id="texto-puntos">0</span></div>
+    </header>
+    <div class="contenedor-barra"><div id="barra-tiempo"></div></div>
+    <main id="tablero" class="tablero"></main>
+  </section>
+
+  <!-- ============ VENTANA: NOMBRE ============ -->
+  <div id="ventana-nombre" class="fondo oculto">
+    <form id="formulario-nombre" class="ventana">
+      <h2>Identificate, vecino/a</h2>
+      <input id="entrada-nombre" type="text" maxlength="20" placeholder="Nombre de usuario (ej. 3ºB)" autocomplete="off" required>
+      <div class="botones">
+        <button type="button" id="boton-cancelar" class="boton">Cancelar</button>
+        <button type="submit" class="boton principal">Empezar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============ VENTANA: FIN DE PARTIDA ============ -->
+  <div id="ventana-final" class="fondo oculto">
+    <div class="ventana">
+      <h2 id="titulo-final">Fin de la junta</h2>
+      <p id="texto-final"></p>
+      <p class="puntuacion-final">Puntuacion: <strong id="puntos-final">0</strong></p>
+      <div class="botones">
+        <button id="boton-salir" class="boton">Salir</button>
+        <button id="boton-repetir" class="boton principal">Volver a jugar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="juego.js"></script>
+</body>
+</html>
