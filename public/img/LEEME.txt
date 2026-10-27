@@ -1,1 +1,0 @@
-Coloca aquí tus 15 imágenes (jpg/png, cuadradas si es posible) y enlázalas en la constante IMAGES de public/game.js.

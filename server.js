@@ -6,7 +6,7 @@ const MongoClient = require('mongodb').MongoClient;
 const app = express();
 const PUERTO = process.env.PORT || 3000;
 const URI_MONGO = process.env.MONGODB_URI;
-const NOMBRE_BD = process.env.DB_NAME || 'juego_parejas';
+const NOMBRE_BD = process.env.MONGODB_DB || 'juego_parejas';
 
 // 15 parejas + 40 de bonus como maximo
 const PUNTOS_MAXIMOS = 15 + 40;
