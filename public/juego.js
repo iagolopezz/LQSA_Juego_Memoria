@@ -1,336 +1,208 @@
-// ============================================================
-//  JUEGO DE PAREJAS 6x5 - Junta de Vecinos
-// ============================================================
+// juego de parejas
 
-// ---------- CONSTANTES ----------
-const COLUMNAS = 6;
-const FILAS = 5;
-const TOTAL_CARTAS = COLUMNAS * FILAS; // 30 cartas
-const TOTAL_PAREJAS = TOTAL_CARTAS / 2; // 15 parejas
-const TIEMPO_MAXIMO = 60; // segundos
-const PUNTOS_ACIERTO = 1;
-const PUNTOS_ERROR = -1;
-const PUNTOS_EXTRA = 40; // si terminas antes de que acabe el tiempo
-const ESPERA_VOLTEAR = 800; // milisegundos que se ven las cartas falladas
+var imagenes = ['img/amador.jpg', 'img/coque.jpeg', 'img/enrique.jpeg', 'img/estela.png', 'img/fermin.jpeg',
+  'img/fina.jpeg', 'img/izaskun.jpeg', 'img/vicente.jpeg', 'img/javi.jpeg', 'img/judith.jpg',
+  'img/leo.jpeg', 'img/maite.jpg', 'img/maxi.jpg', 'img/nines.jpeg', 'img/recio.jpg'];
 
-// Rutas de las imagenes (una por pareja, 15 en total)
-const IMAGENES = ['img/amador.jpg', 'img/coque.jpeg', 'img/enrique.jpeg', 'img/estela.png', 'img/fermin.jpeg',
-                  'img/fina.jpeg', 'img/izaskun.jpeg', 'img/vicente.jpeg', 'img/javi.jpeg', 'img/judith.jpg',
-                  'img/leo.jpeg', 'img/maite.jpg', 'img/maxi.jpg', 'img/nines.jpeg', 'img/recio.jpg'];
+var nombre = '';
+var puntos = 0;
+var tiempo = 60;
+var reloj;
+var carta1 = null;
+var esperando = false;
+var aciertos = 0;
+var jugando = false;
 
-// Si una imagen no existe en la lista, se usa el emoji de la misma posicion
-const EMOJIS = ['🏊', '🚗', '🔑', '📋', '💶', '🐟', '🛗', '🗑️',
-                '📢', '🌳', '🧯', '📬', '🪠', '🧹', '🍷'];
+// ranking
+function cargarRanking() {
+  var lista = document.getElementById('ranking');
+  lista.innerHTML = '<li class="apagado">Cargando...</li>';
 
-// ---------- ELEMENTOS DEL HTML ----------
-const pantallaInicio = document.getElementById('pantalla-inicio');
-const pantallaJuego = document.getElementById('pantalla-juego');
-const listaRanking = document.getElementById('ranking');
-const botonJugar = document.getElementById('boton-jugar');
-
-const ventanaNombre = document.getElementById('ventana-nombre');
-const formularioNombre = document.getElementById('formulario-nombre');
-const entradaNombre = document.getElementById('entrada-nombre');
-const botonCancelar = document.getElementById('boton-cancelar');
-
-const textoJugador = document.getElementById('texto-jugador');
-const textoTiempo = document.getElementById('texto-tiempo');
-const textoPuntos = document.getElementById('texto-puntos');
-const barraTiempo = document.getElementById('barra-tiempo');
-const tablero = document.getElementById('tablero');
-
-const ventanaFinal = document.getElementById('ventana-final');
-const tituloFinal = document.getElementById('titulo-final');
-const textoFinal = document.getElementById('texto-final');
-const puntosFinal = document.getElementById('puntos-final');
-const botonRepetir = document.getElementById('boton-repetir');
-const botonSalir = document.getElementById('boton-salir');
-
-// ---------- VARIABLES DEL JUEGO ----------
-let nombreJugador = '';
-let puntos = 0;
-let tiempoRestante = TIEMPO_MAXIMO;
-let temporizador = null;
-let primeraCarta = null; // primera carta girada del turno
-let bloqueado = false; // true mientras se espera para voltear las cartas falladas
-let parejasEncontradas = 0;
-let jugando = false;
-
-// ============================================================
-//  PANTALLA INICIAL
-// ============================================================
-
-// Pide el top 5 al servidor y lo pinta en la lista
-async function cargarRanking() {
-  listaRanking.innerHTML = '<li class="apagado">Cargando...</li>';
-
-  try {
-    const respuesta = await fetch('/api/ranking');
-    const jugadores = await respuesta.json();
-
-    listaRanking.innerHTML = '';
-
-    if (jugadores.length === 0) {
-      listaRanking.innerHTML = '<li class="apagado">Aun no hay vecinos en el acta</li>';
-      return;
-    }
-
-    for (let i = 0; i < jugadores.length; i++) {
-      const fila = document.createElement('li');
-
-      const posicion = document.createElement('span');
-      posicion.className = 'posicion';
-      posicion.textContent = i + 1;
-
-      const nombre = document.createElement('span');
-      nombre.className = 'nombre';
-      nombre.textContent = jugadores[i].nombre;
-
-      const puntosJugador = document.createElement('span');
-      puntosJugador.className = 'puntos';
-      puntosJugador.textContent = jugadores[i].puntos + ' pts';
-
-      fila.appendChild(posicion);
-      fila.appendChild(nombre);
-      fila.appendChild(puntosJugador);
-      listaRanking.appendChild(fila);
-    }
-  } catch (error) {
-    listaRanking.innerHTML = '<li class="apagado">No se pudo cargar el ranking</li>';
-  }
+  fetch('/api/ranking')
+    .then(function (res) {
+      return res.json();
+    })
+    .then(function (datos) {
+      lista.innerHTML = '';
+      if (datos.length == 0) {
+        lista.innerHTML = '<li class="apagado">Todavia no hay nadie</li>';
+      }
+      for (var i = 0; i < datos.length; i++) {
+        var li = document.createElement('li');
+        li.innerHTML = '<span class="posicion">' + (i + 1) + '</span>' +
+          '<span class="nombre"></span>' +
+          '<span class="puntos">' + datos[i].puntos + ' pts</span>';
+        li.querySelector('.nombre').textContent = datos[i].nombre;
+        lista.appendChild(li);
+      }
+    })
+    .catch(function () {
+      lista.innerHTML = '<li class="apagado">No se pudo cargar el ranking</li>';
+    });
 }
 
-function mostrarInicio() {
-  ventanaFinal.classList.add('oculto');
-  pantallaJuego.classList.remove('activa');
-  pantallaInicio.classList.add('activa');
+function irInicio() {
+  document.getElementById('ventana-final').classList.add('oculto');
+  document.getElementById('pantalla-juego').classList.remove('activa');
+  document.getElementById('pantalla-inicio').classList.add('activa');
   cargarRanking();
 }
 
-function abrirVentanaNombre() {
-  ventanaNombre.classList.remove('oculto');
-  entradaNombre.value = nombreJugador;
-  entradaNombre.focus();
+function pedirNombre() {
+  document.getElementById('ventana-nombre').classList.remove('oculto');
+  document.getElementById('entrada-nombre').value = nombre;
+  document.getElementById('entrada-nombre').focus();
 }
 
-function cerrarVentanaNombre() {
-  ventanaNombre.classList.add('oculto');
+function cancelar() {
+  document.getElementById('ventana-nombre').classList.add('oculto');
 }
 
-function confirmarNombre(evento) {
-  evento.preventDefault(); // evita que el formulario recargue la pagina
+function aceptarNombre(e) {
+  e.preventDefault();
+  var texto = document.getElementById('entrada-nombre').value.trim();
+  if (texto == '') return;
+  nombre = texto;
+  cancelar();
+  empezar();
+}
 
-  const nombre = entradaNombre.value.trim();
-  if (nombre === '') {
-    return;
+// juego
+function crearCartas() {
+  var numeros = [];
+  for (var i = 0; i < 15; i++) {
+    numeros.push(i);
+    numeros.push(i);
+  }
+  // desordenar
+  for (var i = numeros.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var aux = numeros[i];
+    numeros[i] = numeros[j];
+    numeros[j] = aux;
   }
 
-  nombreJugador = nombre;
-  cerrarVentanaNombre();
-  empezarJuego();
-}
-
-// ============================================================
-//  JUEGO
-// ============================================================
-
-// Baraja un array (algoritmo de Fisher-Yates)
-function mezclar(lista) {
-  for (let i = lista.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const auxiliar = lista[i];
-    lista[i] = lista[j];
-    lista[j] = auxiliar;
-  }
-  return lista;
-}
-
-// Devuelve el HTML que se ve al girar una carta (imagen o emoji)
-function contenidoCarta(numeroPareja) {
-  if (IMAGENES[numeroPareja]) {
-    return '<img src="' + IMAGENES[numeroPareja] + '" alt="" draggable="false">';
-  }
-  return EMOJIS[numeroPareja];
-}
-
-function crearTablero() {
-  // Lista con cada numero de pareja dos veces: 0,0,1,1,2,2...
-  const parejas = [];
-  for (let i = 0; i < TOTAL_PAREJAS; i++) {
-    parejas.push(i);
-    parejas.push(i);
-  }
-  mezclar(parejas);
-
+  var tablero = document.getElementById('tablero');
   tablero.innerHTML = '';
 
-  for (let i = 0; i < parejas.length; i++) {
-    const numeroPareja = parejas[i];
-
-    const carta = document.createElement('button');
+  for (var i = 0; i < numeros.length; i++) {
+    var carta = document.createElement('button');
     carta.className = 'carta';
-    carta.dataset.pareja = numeroPareja;
-    carta.innerHTML =
-      '<div class="carta-interior">' +
-        '<div class="cara frontal"></div>' +
-        '<div class="cara trasera">' + contenidoCarta(numeroPareja) + '</div>' +
+    carta.dataset.pareja = numeros[i];
+    carta.innerHTML = '<div class="carta-interior">' +
+      '<div class="cara frontal"></div>' +
+      '<div class="cara trasera"><img src="' + imagenes[numeros[i]] + '" draggable="false"></div>' +
       '</div>';
-
-    carta.addEventListener('click', function () {
-      alPulsarCarta(carta);
-    });
-
+    carta.onclick = function () {
+      pulsarCarta(this);
+    };
     tablero.appendChild(carta);
   }
 }
 
-function actualizarMarcador() {
-  textoJugador.textContent = nombreJugador;
-  textoTiempo.textContent = tiempoRestante;
-  textoPuntos.textContent = puntos;
-
-  const porcentaje = (tiempoRestante / TIEMPO_MAXIMO) * 100;
-  barraTiempo.style.width = porcentaje + '%';
-
-  if (tiempoRestante <= 10) {
-    barraTiempo.classList.add('poco-tiempo');
-  } else {
-    barraTiempo.classList.remove('poco-tiempo');
-  }
+function pintarMarcador() {
+  document.getElementById('texto-jugador').textContent = nombre;
+  document.getElementById('texto-tiempo').textContent = tiempo;
+  document.getElementById('texto-puntos').textContent = puntos;
 }
 
-function empezarJuego() {
-  clearInterval(temporizador);
-
+function empezar() {
+  clearInterval(reloj);
   puntos = 0;
-  tiempoRestante = TIEMPO_MAXIMO;
-  primeraCarta = null;
-  bloqueado = false;
-  parejasEncontradas = 0;
+  tiempo = 60;
+  carta1 = null;
+  esperando = false;
+  aciertos = 0;
   jugando = true;
 
-  pantallaInicio.classList.remove('activa');
-  pantallaJuego.classList.add('activa');
-  ventanaFinal.classList.add('oculto');
+  document.getElementById('pantalla-inicio').classList.remove('activa');
+  document.getElementById('pantalla-juego').classList.add('activa');
+  document.getElementById('ventana-final').classList.add('oculto');
 
-  crearTablero(); // las cartas empiezan boca abajo
-  actualizarMarcador();
+  crearCartas();
+  pintarMarcador();
 
-  temporizador = setInterval(pasarSegundo, 1000);
+  reloj = setInterval(function () {
+    tiempo--;
+    pintarMarcador();
+    if (tiempo <= 0) {
+      fin(false);
+    }
+  }, 1000);
 }
 
-function pasarSegundo() {
-  tiempoRestante = tiempoRestante - 1;
-  actualizarMarcador();
-
-  if (tiempoRestante <= 0) {
-    terminarJuego(false);
-  }
-}
-
-function alPulsarCarta(carta) {
-  // Ignoramos el click si no se puede jugar
-  if (jugando === false || bloqueado === true) {
-    return;
-  }
-  if (carta.classList.contains('girada') || carta.classList.contains('acertada')) {
-    return;
-  }
+function pulsarCarta(carta) {
+  if (!jugando || esperando) return;
+  if (carta.classList.contains('girada') || carta.classList.contains('acertada')) return;
 
   carta.classList.add('girada');
 
-  if (primeraCarta === null) {
-    // Es la primera carta del turno
-    primeraCarta = carta;
-  } else {
-    // Es la segunda: comprobamos si forman pareja
-    comprobarPareja(primeraCarta, carta);
+  if (carta1 == null) {
+    carta1 = carta;
+    return;
   }
-}
 
-function comprobarPareja(carta1, carta2) {
-  if (carta1.dataset.pareja === carta2.dataset.pareja) {
-    // ----- ACIERTO -----
+  var carta2 = carta;
+
+  if (carta1.dataset.pareja == carta2.dataset.pareja) {
     carta1.classList.add('acertada');
     carta2.classList.add('acertada');
-    puntos = puntos + PUNTOS_ACIERTO;
-    parejasEncontradas = parejasEncontradas + 1;
-    primeraCarta = null;
-    actualizarMarcador();
-
-    if (parejasEncontradas === TOTAL_PAREJAS) {
-      terminarJuego(true);
+    puntos++;
+    aciertos++;
+    carta1 = null;
+    pintarMarcador();
+    if (aciertos == 15) {
+      fin(true);
     }
   } else {
-    // ----- ERROR -----
-    puntos = puntos + PUNTOS_ERROR;
-    if (puntos < 0) {
-      puntos = 0; // la puntuacion no baja de 0
-    }
-    actualizarMarcador();
+    puntos--;
+    if (puntos < 0) puntos = 0;
+    pintarMarcador();
 
-    bloqueado = true;
+    esperando = true;
     carta1.classList.add('fallada');
     carta2.classList.add('fallada');
 
-    // Despues de un momento, volvemos a ocultar las dos cartas
+    var c1 = carta1;
     setTimeout(function () {
-      carta1.classList.remove('girada', 'fallada');
+      c1.classList.remove('girada', 'fallada');
       carta2.classList.remove('girada', 'fallada');
-      primeraCarta = null;
-      bloqueado = false;
-    }, ESPERA_VOLTEAR);
+      carta1 = null;
+      esperando = false;
+    }, 800);
   }
 }
 
-// ============================================================
-//  FIN DE LA PARTIDA
-// ============================================================
-
-// completado = true si se han encontrado todas las parejas
-function terminarJuego(completado) {
-  if (jugando === false) {
-    return;
-  }
+function fin(ganado) {
+  if (!jugando) return;
   jugando = false;
-  clearInterval(temporizador);
+  clearInterval(reloj);
 
-  if (completado === true && tiempoRestante > 0) {
-    puntos = puntos + PUNTOS_EXTRA;
-    tituloFinal.textContent = '🎉 ¡Junta aprobada!';
-    textoFinal.textContent = 'Terminaste con ' + tiempoRestante + 's de sobra. ¡+' + PUNTOS_EXTRA + ' puntos extra!';
+  if (ganado && tiempo > 0) {
+    puntos += 40;
+    document.getElementById('titulo-final').textContent = '¡Junta aprobada!';
+    document.getElementById('texto-final').textContent = 'Te han sobrado ' + tiempo + ' segundos, +40 puntos';
   } else {
-    tituloFinal.textContent = '⏰ Se levanta la sesion';
-    textoFinal.textContent = 'Se acabo el tiempo y quedaron parejas sin encontrar.';
+    document.getElementById('titulo-final').textContent = 'Se levanta la sesion';
+    document.getElementById('texto-final').textContent = 'Se acabo el tiempo';
   }
 
-  actualizarMarcador();
-  puntosFinal.textContent = puntos;
-  ventanaFinal.classList.remove('oculto');
+  pintarMarcador();
+  document.getElementById('puntos-final').textContent = puntos;
+  document.getElementById('ventana-final').classList.remove('oculto');
 
-  guardarPuntuacion();
+  // guardar en la base de datos
+  fetch('/api/ranking', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre: nombre, puntos: puntos })
+  });
 }
 
-// Envia la puntuacion al servidor para guardarla en Mongo
-async function guardarPuntuacion() {
-  try {
-    await fetch('/api/ranking', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: nombreJugador, puntos: puntos })
-    });
-  } catch (error) {
-    console.log('No se pudo guardar la puntuacion', error);
-  }
-}
+document.getElementById('boton-jugar').onclick = pedirNombre;
+document.getElementById('boton-cancelar').onclick = cancelar;
+document.getElementById('formulario-nombre').onsubmit = aceptarNombre;
+document.getElementById('boton-repetir').onclick = empezar;
+document.getElementById('boton-salir').onclick = irInicio;
 
-// ============================================================
-//  EVENTOS Y ARRANQUE
-// ============================================================
-botonJugar.addEventListener('click', abrirVentanaNombre);
-botonCancelar.addEventListener('click', cerrarVentanaNombre);
-formularioNombre.addEventListener('submit', confirmarNombre);
-botonRepetir.addEventListener('click', empezarJuego);
-botonSalir.addEventListener('click', mostrarInicio);
-
-mostrarInicio();
+irInicio();

@@ -4,7 +4,8 @@
   "description": "Juego de parejas 6x5 con ranking en MongoDB Atlas",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "datos": "node datos.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
